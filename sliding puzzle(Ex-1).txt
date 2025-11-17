@@ -1,0 +1,81 @@
+from heapq import heappush, heappop
+
+# Goal configuration
+goal_state = [[1,2,3],
+              [4,5,6],
+              [7,8,0]]     # 0 represents the empty space
+
+# Find position of a tile in the grid
+def find_pos(state, value):
+    for i in range(3):
+        for j in range(3):
+            if state[i][j] == value:
+                return i, j
+
+# Manhattan distance heuristic
+def heuristic(state):
+    dist = 0
+    for i in range(3):
+        for j in range(3):
+            val = state[i][j]
+            if val != 0:
+                goal_i, goal_j = find_pos(goal_state, val)
+                dist += abs(i - goal_i) + abs(j - goal_j)
+    return dist
+
+# Convert to tuple for hashing
+def to_tuple(state):
+    return tuple(tuple(row) for row in state)
+
+# Generate next possible states
+def get_neighbors(state):
+    moves = [(1,0), (-1,0), (0,1), (0,-1)]  # Down, Up, Right, Left
+    x, y = find_pos(state, 0)
+    neighbors = []
+
+    for dx, dy in moves:
+        nx, ny = x + dx, y + dy
+
+        if 0 <= nx < 3 and 0 <= ny < 3:
+            new_state = [row[:] for row in state]
+            new_state[x][y], new_state[nx][ny] = new_state[nx][ny], new_state[x][y]
+            neighbors.append(new_state)
+    return neighbors
+
+# A* Search Algorithm
+def a_star(start):
+    pq = []
+    heappush(pq, (heuristic(start), start, []))
+    visited = set()
+
+    while pq:
+        cost, state, path = heappop(pq)
+        key = to_tuple(state)
+
+        if key in visited:
+            continue
+        visited.add(key)
+
+        # Goal reached
+        if state == goal_state:
+            return path + [state]
+
+        for neighbor in get_neighbors(state):
+            heappush(pq, (len(path) + 1 + heuristic(neighbor), neighbor, path + [state]))
+
+    return None
+
+# Example scrambled input
+start_state = [[1,2,3],
+               [5,6,0],
+               [4,7,8]]
+
+# Solve the puzzle
+solution = a_star(start_state)
+
+# Display solution
+print("\nSolution Steps:")
+for step, state in enumerate(solution):
+    print(f"\nStep {step}:")
+    for row in state:
+        print(row)
